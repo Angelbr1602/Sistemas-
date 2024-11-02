@@ -1,0 +1,61 @@
+def on_log_full():
+    global logging
+    logging = False
+    basic.show_leds("""
+        . . . . .
+        . . . . .
+        . . . . .
+        . . . . .
+        . . . . .
+        """)
+datalogger.on_log_full(on_log_full)
+
+def on_button_pressed_a():
+    global logging
+    basic.show_icon(IconNames.YES)
+    basic.show_string("levantar pies")
+    # Movimiento hacia arriba en el eje Z
+    if input.acceleration(Dimension.Z) >= 150:
+        logging = True
+        # Indica que el pie se ha levantado
+        basic.show_icon(IconNames.HOUSE)
+        basic.show_string("Pie levantado")
+    # Movimiento en el eje X (hacia adelante/atrás) o eje Y (de un lado a otro)
+    if input.acceleration(Dimension.X) >= 150 or input.acceleration(Dimension.Y) >= 150:
+        basic.show_string("Mover pie")
+        logging = True
+    # Detección de movimientos circulares en los ejes X e Y
+    if (input.acceleration(Dimension.X) >= 100 or input.acceleration(Dimension.X) <= -100) and (input.acceleration(Dimension.Y) >= 100 or input.acceleration(Dimension.Y) <= -100):
+        # Usamos el icono de Target para representar el movimiento circular
+        basic.show_icon(IconNames.TARGET)
+        basic.show_string("Movimiento circular")
+        logging = True
+input.on_button_pressed(Button.A, on_button_pressed_a)
+
+def on_button_pressed_ab():
+    global logging
+    logging = False
+    basic.show_string("Clean")
+    basic.show_icon(IconNames.SKULL)
+    datalogger.delete_log()
+    datalogger.set_column_titles("x", "y", "z")
+input.on_button_pressed(Button.AB, on_button_pressed_ab)
+
+def on_button_pressed_b():
+    global logging
+    logging = False
+    basic.show_icon(IconNames.GHOST)
+input.on_button_pressed(Button.B, on_button_pressed_b)
+
+logging = False
+logging = False
+basic.show_icon(IconNames.PITCHFORK)
+datalogger.set_column_titles("x", "y", "z")
+# Registrar datos de aceleración cada 100 ms
+
+def on_every_interval():
+    if logging:
+        datalogger.log(datalogger.create_cv("x", input.acceleration(Dimension.X)),
+            datalogger.create_cv("y", input.acceleration(Dimension.Y)),
+            datalogger.create_cv("z", input.acceleration(Dimension.Z)))
+loops.every_interval(100, on_every_interval)
